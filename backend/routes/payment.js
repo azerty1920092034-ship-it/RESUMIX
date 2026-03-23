@@ -18,7 +18,7 @@ router.post("/pay", async (req, res) => {
       description: "Abonnement RESUMIX PRO - 1 mois",
       amount: 3000,
       currency: { iso: "XOF" },
-      callback_url: "http://localhost:5000/payment/callback",
+      callback_url: "https://resumix-9arb.onrender.com/payment/callback",
       customer: {
         firstname: user.name.split(" ")[0] || user.name,
         lastname: user.name.split(" ")[1] || "",

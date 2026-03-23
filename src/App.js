@@ -3,7 +3,7 @@ import axios from "axios";
 import "./App.css";
 
 axios.defaults.withCredentials = true;
-const API = "http://localhost:5000";
+const API = "https://resumix-9arb.onrender.com";
 const FREE_LIMIT = 6;
 const BOOK_QUESTION_LIMIT = 16;
 

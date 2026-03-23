@@ -2,7 +2,7 @@
   "name": "resumix",
   "version": "0.1.0",
   "private": true,
-  "proxy": "http://localhost:5000",
+  "proxy": "https://resumix-9arb.onrender.com",
   "dependencies": {
     "axios": "^1.13.6",
     "bcryptjs": "^3.0.3",
