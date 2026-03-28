@@ -109,6 +109,7 @@ function App() {
   const [text, setText] = useState("");
   const [summary, setSummary] = useState("");
   const [language, setLanguage] = useState("fr");
+  const [summaryRate, setSummaryRate] = useState(40);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
@@ -210,7 +211,6 @@ function App() {
     }
   }, [selectedBook, bookUsage]);
 
-  // Upload file handler
   const handleFileUpload = async (file) => {
     if (!file) return;
     const allowed = ["application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "text/plain"];
@@ -296,7 +296,7 @@ function App() {
     if (!text.trim()) { setError("Veuillez entrer un texte."); return; }
     setLoading(true); setError(""); setSummary(""); setSchema(""); setQcm(null); setQcmResult(null);
     try {
-      const res = await axios.post(`${API}/api/summarize`, { text, language });
+      const res = await axios.post(`${API}/api/summarize`, { text, language, summaryRate });
       if (res.data.limitReached) { setShowProModal(true); }
       else { setSummary(res.data.summary); await checkSession(); }
     } catch (err) {
@@ -554,6 +554,22 @@ function App() {
                   </div>
                 </div>
 
+                {/* Sélecteur de taux de résumé */}
+                <div className="rate-selector-bar">
+                  <span className="rate-label">Taux de resume :</span>
+                  <div className="rate-buttons">
+                    {[20, 40, 60, 80].map(rate => (
+                      <button
+                        key={rate}
+                        className={`rate-btn ${summaryRate === rate ? "active" : ""}`}
+                        onClick={() => setSummaryRate(rate)}
+                      >
+                        {rate}%
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 {/* File upload zone */}
                 <div
                   className={`upload-zone ${dragOver ? "drag-over" : ""}`}
@@ -597,7 +613,7 @@ function App() {
 
               <div className="panel panel-output">
                 <div className="panel-header">
-                  <span className="panel-label">Resume</span>
+                  <span className="panel-label">Resume ({summaryRate}%)</span>
                   {summary && <button className="btn-copy" onClick={copyToClipboard}>{copied ? "Copie !" : "Copier"}</button>}
                 </div>
                 <div className="output-area">

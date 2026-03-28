@@ -10,7 +10,7 @@ router.post("/summarize", async (req, res) => {
     const Groq = require("groq-sdk");
     const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-    const { text, language } = req.body;
+    const { text, language, summaryRate = 40 } = req.body;
 
     if (!text || text.split(" ").length < 10) {
       return res.json({ summary: "Texte trop court (minimum 10 mots)" });
@@ -38,8 +38,20 @@ router.post("/summarize", async (req, res) => {
     const response = await groq.chat.completions.create({
       model: "llama-3.3-70b-versatile",
       messages: [
-        { role: "system", content: "Tu es un expert en resume de texte. Reponds en " + language },
-        { role: "user", content: "Resume ce texte : " + text }
+        {
+          role: "system",
+          content: `Tu es un expert en resume de texte. Reponds en ${language}. 
+          Tu dois produire un resume qui fait environ ${summaryRate}% de la longueur du texte original.
+          Si le taux est 20%, le resume doit etre tres court et ne garder que l'essentiel.
+          Si le taux est 40%, le resume doit etre moderement court.
+          Si le taux est 60%, le resume doit conserver la plupart des informations importantes.
+          Si le taux est 80%, le resume doit etre presque complet avec peu de reduction.
+          Respecte strictement ce taux de compression.`
+        },
+        {
+          role: "user",
+          content: `Resume ce texte en environ ${summaryRate}% de sa longueur originale : ${text}`
+        }
       ]
     });
 
