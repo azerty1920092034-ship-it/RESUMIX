@@ -9,7 +9,7 @@ const app = express();
 
 const corsOptions = {
   origin: function(origin, callback) {
-    const allowed = ["http://localhost:3000", "http://localhost:3001", "https://resumix-1.onrender.com"];
+    const allowed = ["http://localhost:3000", "http://localhost:3001", "https://resumix-1.onrender.com", "https://resumix-1f.onrender.com"];
     if (!origin || allowed.includes(origin)) {
       callback(null, true);
     } else {
