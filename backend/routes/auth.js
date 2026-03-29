@@ -18,9 +18,9 @@ const transporter = nodemailer.createTransport({
 router.get("/google", passport.authenticate("google", { scope: ["profile", "email"] }));
 
 router.get("/google/callback",
-  passport.authenticate("google", { failureRedirect: "http://localhost:3001/login" }),
+  passport.authenticate("google", { failureRedirect: "https://resumix-1f.onrender.com/login" }),
   (req, res) => {
-    res.redirect("http://localhost:3001");
+    res.redirect("https://resumix-1f.onrender.com");
   }
 );
 
