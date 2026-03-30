@@ -7,6 +7,7 @@ const passport = require("passport");
 const mongoose = require("mongoose");
 
 const app = express();
+app.set("trust proxy", 1);
 
 const corsOptions = {
   origin: function(origin, callback) {
