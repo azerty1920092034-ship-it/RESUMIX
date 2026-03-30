@@ -1,9 +1,9 @@
 ﻿import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
-import "./App.css";resumix-1f.onrender.com
+import "./App.css";
 
 axios.defaults.withCredentials = true;
-const API = "https://";
+const API = "https://resumix-1.onrender.com";
 const FREE_LIMIT = 6;
 const BOOK_QUESTION_LIMIT = 16;
 
