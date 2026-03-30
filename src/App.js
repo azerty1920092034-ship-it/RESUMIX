@@ -621,7 +621,7 @@ function App() {
                     <div className="stats">
                       <span className="stat">{summary.trim().split(/\s+/).length} mots</span>
                       <span className="stat-divider">.</span>
-                      <span className="stat reduction">{wordCount > 0 ? Math.round((1 - summary.trim().split(/\s+/).length / wordCount) * 100) : 0}% reduction</span>
+                      <span className="stat reduction">{wordCount > 0 ? Math.max(0, Math.round((1 - summary.trim().split(/\s+/).length / wordCount) * 100)) : 0}% reduction</span>
                     </div>
                     <div className="action-buttons">
                       <button className="btn-secondary" onClick={generateSchema} disabled={schemaLoading}>{schemaLoading ? "Generation..." : "Schema"}</button>
