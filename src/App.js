@@ -2,10 +2,13 @@
 import axios from "axios";
 import "./App.css";
 
-axios.defaults.withCredentials = true;
 const API = "https://resumix-1-pmv0.onrender.com";
 const FREE_LIMIT = 6;
 const BOOK_QUESTION_LIMIT = 16;
+
+const getToken = () => localStorage.getItem("token");
+const setToken = (t) => localStorage.setItem("token", t);
+const removeToken = () => localStorage.removeItem("token");
 
 const BOOKS = {
   "College": {
@@ -131,13 +134,11 @@ function App() {
   const [qcmResult, setQcmResult] = useState(null);
   const [activeTab, setActiveTab] = useState("home");
 
-  // Upload states
   const fileInputRef = useRef(null);
   const [uploadLoading, setUploadLoading] = useState(false);
   const [uploadedFile, setUploadedFile] = useState(null);
   const [dragOver, setDragOver] = useState(false);
 
-  // Library states
   const [selectedLevel, setSelectedLevel] = useState("College");
   const [selectedSubject, setSelectedSubject] = useState(null);
   const [selectedBook, setSelectedBook] = useState(null);
@@ -152,7 +153,6 @@ function App() {
   const [bookUsage, setBookUsage] = useState({});
   const [questionsLeft, setQuestionsLeft] = useState(BOOK_QUESTION_LIMIT);
 
-  // Forgot password states
   const [forgotStep, setForgotStep] = useState(1);
   const [forgotEmail, setForgotEmail] = useState("");
   const [forgotCode, setForgotCode] = useState("");
@@ -163,6 +163,10 @@ function App() {
   const [forgotSuccess, setForgotSuccess] = useState("");
 
   useEffect(() => {
+    const token = getToken();
+    if (token) {
+      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+    }
     checkSession();
     const params = new URLSearchParams(window.location.search);
     const payment = params.get("payment");
@@ -180,6 +184,9 @@ function App() {
 
   const checkSession = async () => {
     try {
+      const token = getToken();
+      if (!token) return;
+      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
       const res = await axios.get(`${API}/auth/me`);
       if (res.data.user) { setUser(res.data.user); setPage("home"); }
     } catch {}
@@ -229,7 +236,7 @@ function App() {
       setUploadedFile({ name: file.name, wordCount: res.data.wordCount });
       setSummary(""); setSchema(""); setQcm(null); setQcmResult(null);
     } catch (err) {
-      alert(err.response?.data?.error || "Erreur lors de l'extraction du fichier.");
+      alert(err.response?.data?.error || "Erreur lors de l extraction du fichier.");
     }
     setUploadLoading(false);
   };
@@ -245,6 +252,8 @@ function App() {
     setAuthLoading(true); setAuthError("");
     try {
       const res = await axios.post(`${API}/auth/register`, form);
+      setToken(res.data.token);
+      axios.defaults.headers.common["Authorization"] = `Bearer ${res.data.token}`;
       setUser(res.data.user); setPage("home");
     } catch (err) { setAuthError(err.response?.data?.error || "Erreur inscription"); }
     setAuthLoading(false);
@@ -254,13 +263,16 @@ function App() {
     setAuthLoading(true); setAuthError("");
     try {
       const res = await axios.post(`${API}/auth/login`, { email: form.email, password: form.password });
+      setToken(res.data.token);
+      axios.defaults.headers.common["Authorization"] = `Bearer ${res.data.token}`;
       setUser(res.data.user); setPage("home");
     } catch (err) { setAuthError(err.response?.data?.error || "Erreur connexion"); }
     setAuthLoading(false);
   };
 
   const handleLogout = async () => {
-    await axios.get(`${API}/auth/logout`);
+    removeToken();
+    delete axios.defaults.headers.common["Authorization"];
     setUser(null); setPage("login");
     setText(""); setSummary(""); setSchema(""); setQcm(null); setQcmResult(null); setUploadedFile(null);
   };
@@ -279,7 +291,7 @@ function App() {
     try {
       await axios.post(`${API}/auth/forgot-password`, { email: forgotEmail });
       setForgotStep(2);
-    } catch (err) { setForgotError(err.response?.data?.error || "Erreur lors de l'envoi"); }
+    } catch (err) { setForgotError(err.response?.data?.error || "Erreur lors de l envoi"); }
     setForgotLoading(false);
   };
 
@@ -349,7 +361,7 @@ function App() {
     } catch (err) {
       if (err.response?.data?.limitReached) {
         setQuestionsLeft(0);
-        alert(`Limite de ${BOOK_QUESTION_LIMIT} questions atteinte pour ce livre aujourd'hui !`);
+        alert(`Limite de ${BOOK_QUESTION_LIMIT} questions atteinte pour ce livre aujourd hui !`);
       } else { alert("Erreur lors de la reponse."); }
     }
     setBookAnswerLoading(false);
@@ -371,7 +383,7 @@ function App() {
     } catch (err) {
       if (err.response?.data?.limitReached) {
         setQuestionsLeft(0);
-        alert(`Limite atteinte pour ce livre aujourd'hui !`);
+        alert(`Limite atteinte pour ce livre aujourd hui !`);
       } else { alert("Erreur lors de la generation des exercices."); }
     }
     setBookExercisesLoading(false);
@@ -473,10 +485,10 @@ function App() {
             </div>
             {page === "login" && <button className="forgot-link" onClick={openForgotPassword}>Mot de passe oublie ?</button>}
             <button className="btn-primary auth-btn" onClick={page === "login" ? handleLogin : handleRegister} disabled={authLoading}>
-              {authLoading ? "Chargement..." : page === "login" ? "Se connecter" : "S'inscrire"}
+              {authLoading ? "Chargement..." : page === "login" ? "Se connecter" : "S inscrire"}
             </button>
             <p className="auth-switch">
-              {page === "login" ? (<>Pas de compte ? <button onClick={() => setPage("register")}>S'inscrire</button></>) : (<>Deja un compte ? <button onClick={() => setPage("login")}>Se connecter</button></>)}
+              {page === "login" ? (<>Pas de compte ? <button onClick={() => setPage("register")}>S inscrire</button></>) : (<>Deja un compte ? <button onClick={() => setPage("login")}>Se connecter</button></>)}
             </p>
           </div>
         </div>
@@ -533,12 +545,11 @@ function App() {
 
       <main className="main">
 
-        {/* HOME TAB */}
         {activeTab === "home" && (
           <>
             <div className="hero">
-              <h1 className="hero-title">Resumez n'importe quel texte<span className="hero-accent"> en secondes</span></h1>
-              <p className="hero-sub">Propulse par l'IA - Multilingue - Gratuit</p>
+              <h1 className="hero-title">Resumez n importe quel texte<span className="hero-accent"> en secondes</span></h1>
+              <p className="hero-sub">Propulse par l IA - Multilingue - Gratuit</p>
             </div>
             <div className="editor-layout">
               <div className="panel panel-input">
@@ -553,24 +564,14 @@ function App() {
                     {text && <button className="btn-ghost" onClick={() => { setText(""); setSummary(""); setSchema(""); setQcm(null); setQcmResult(null); setUploadedFile(null); }}>Effacer</button>}
                   </div>
                 </div>
-
-                {/* Sélecteur de taux de résumé */}
                 <div className="rate-selector-bar">
                   <span className="rate-label">Taux de resume :</span>
                   <div className="rate-buttons">
                     {[20, 40, 60, 80].map(rate => (
-                      <button
-                        key={rate}
-                        className={`rate-btn ${summaryRate === rate ? "active" : ""}`}
-                        onClick={() => setSummaryRate(rate)}
-                      >
-                        {rate}%
-                      </button>
+                      <button key={rate} className={`rate-btn ${summaryRate === rate ? "active" : ""}`} onClick={() => setSummaryRate(rate)}>{rate}%</button>
                     ))}
                   </div>
                 </div>
-
-                {/* File upload zone */}
                 <div
                   className={`upload-zone ${dragOver ? "drag-over" : ""}`}
                   onDragOver={e => { e.preventDefault(); setDragOver(true); }}
@@ -578,13 +579,7 @@ function App() {
                   onDrop={handleDrop}
                   onClick={() => fileInputRef.current.click()}
                 >
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept=".pdf,.docx,.txt"
-                    style={{display: "none"}}
-                    onChange={e => handleFileUpload(e.target.files[0])}
-                  />
+                  <input ref={fileInputRef} type="file" accept=".pdf,.docx,.txt" style={{display: "none"}} onChange={e => handleFileUpload(e.target.files[0])} />
                   {uploadLoading ? (
                     <div className="upload-loading"><div className="loading-ring"/><p>Extraction en cours...</p></div>
                   ) : uploadedFile ? (
@@ -601,7 +596,6 @@ function App() {
                     </div>
                   )}
                 </div>
-
                 <textarea className="editor-textarea" value={text} onChange={e => setText(e.target.value)} placeholder="Ou collez/tapez votre texte ici..." />
                 <div className="panel-footer">
                   <div className="stats"><span className="stat">{wordCount} mots</span><span className="stat-divider">.</span><span className="stat">{charCount} caracteres</span></div>
@@ -679,7 +673,6 @@ function App() {
           </>
         )}
 
-        {/* HISTORY TAB */}
         {activeTab === "history" && (
           <div className="history-section">
             <h2 className="section-title">Historique des resumes</h2>
@@ -700,11 +693,10 @@ function App() {
           </div>
         )}
 
-        {/* LIBRARY TAB */}
         {activeTab === "library" && (
           <div className="library-section">
             <h2 className="section-title">Bibliotheque</h2>
-            <p className="section-sub">Explorez des livres gratuits et travaillez avec l'IA · 16 questions par livre par jour</p>
+            <p className="section-sub">Explorez des livres gratuits et travaillez avec l IA · 16 questions par livre par jour</p>
             <div className="level-tabs">
               {Object.keys(BOOKS).map(level => (
                 <button key={level} className={`level-tab ${selectedLevel === level ? "active" : ""}`} onClick={() => { setSelectedLevel(level); setSelectedSubject(null); setSelectedBook(null); }}>{level}</button>
@@ -811,7 +803,7 @@ function App() {
                     {questionsLeft <= 0 && (
                       <div className="empty-state" style={{marginTop: "20px"}}>
                         <div className="empty-icon">🔒</div>
-                        <p>Limite de {BOOK_QUESTION_LIMIT} questions atteinte pour ce livre aujourd'hui.</p>
+                        <p>Limite de {BOOK_QUESTION_LIMIT} questions atteinte pour ce livre aujourd hui.</p>
                         <p style={{fontSize: "0.82rem", color: "var(--text3)"}}>Essayez un autre livre ou revenez demain !</p>
                       </div>
                     )}
@@ -822,7 +814,6 @@ function App() {
           </div>
         )}
 
-        {/* PROFILE TAB */}
         {activeTab === "profile" && user && (
           <div className="profile-section">
             <h2 className="section-title">Mon profil</h2>
@@ -838,7 +829,7 @@ function App() {
             </div>
             <div className="profile-stats">
               <div className="profile-stat-card"><span className="stat-icon">📄</span><span className="stat-value">{history.length}</span><span className="stat-label">Resumes</span></div>
-              <div className="profile-stat-card"><span className="stat-icon">📅</span><span className="stat-value">{remainingFree}</span><span className="stat-label">Restants aujourd'hui</span></div>
+              <div className="profile-stat-card"><span className="stat-icon">📅</span><span className="stat-value">{remainingFree}</span><span className="stat-label">Restants aujourd hui</span></div>
               <div className="profile-stat-card"><span className="stat-icon">{user.isPro ? "⭐" : "🔓"}</span><span className="stat-value">{user.isPro ? "PRO" : "FREE"}</span><span className="stat-label">Abonnement</span></div>
             </div>
             {!user.isPro && <button className="btn-upgrade" onClick={() => setShowProModal(true)}>Passer au PRO - 3 000 FCFA/mois</button>}

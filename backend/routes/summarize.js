@@ -1,11 +1,11 @@
 const router = require("express").Router();
+const authMiddleware = require("../middleware/auth");
 const User = require("../models/User");
 const Summary = require("../models/Summary");
 
 const FREE_LIMIT = 6;
 
-// Résumer un texte
-router.post("/summarize", async (req, res) => {
+router.post("/summarize", authMiddleware, async (req, res) => {
   try {
     const Groq = require("groq-sdk");
     const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
@@ -14,10 +14,6 @@ router.post("/summarize", async (req, res) => {
 
     if (!text || text.split(" ").length < 10) {
       return res.json({ summary: "Texte trop court (minimum 10 mots)" });
-    }
-
-    if (!req.user) {
-      return res.status(401).json({ error: "Veuillez vous connecter" });
     }
 
     const user = req.user;
@@ -42,7 +38,7 @@ router.post("/summarize", async (req, res) => {
           role: "system",
           content: `Tu es un expert en resume de texte. Reponds en ${language}. 
           Tu dois produire un resume qui fait environ ${summaryRate}% de la longueur du texte original.
-          Si le taux est 20%, le resume doit etre tres court et ne garder que l'essentiel.
+          Si le taux est 20%, le resume doit etre tres court et ne garder que l essentiel.
           Si le taux est 40%, le resume doit etre moderement court.
           Si le taux est 60%, le resume doit conserver la plupart des informations importantes.
           Si le taux est 80%, le resume doit etre presque complet avec peu de reduction.
@@ -57,7 +53,6 @@ router.post("/summarize", async (req, res) => {
 
     const summaryText = response.choices[0].message.content;
 
-    // Sauvegarder dans l'historique
     const wordCountOriginal = text.trim().split(/\s+/).length;
     const wordCountSummary = summaryText.trim().split(/\s+/).length;
     const reductionPercent = Math.round((1 - wordCountSummary / wordCountOriginal) * 100);
@@ -85,12 +80,8 @@ router.post("/summarize", async (req, res) => {
   }
 });
 
-// Récupérer l'historique
-router.get("/history", async (req, res) => {
+router.get("/history", authMiddleware, async (req, res) => {
   try {
-    if (!req.user) {
-      return res.status(401).json({ error: "Veuillez vous connecter" });
-    }
     const summaries = await Summary.find({ user: req.user._id })
       .sort({ createdAt: -1 })
       .limit(20);
@@ -100,18 +91,11 @@ router.get("/history", async (req, res) => {
   }
 });
 
-// Générer un schéma conceptuel
-router.post("/schema", async (req, res) => {
+router.post("/schema", authMiddleware, async (req, res) => {
   try {
     const Groq = require("groq-sdk");
     const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
-
-    if (!req.user) {
-      return res.status(401).json({ error: "Veuillez vous connecter" });
-    }
-
     const { summary } = req.body;
-
     const response = await groq.chat.completions.create({
       model: "llama-3.3-70b-versatile",
       messages: [
@@ -119,26 +103,17 @@ router.post("/schema", async (req, res) => {
         { role: "user", content: "Cree un schema conceptuel de ce resume : " + summary }
       ]
     });
-
     res.json({ schema: response.choices[0].message.content });
-
   } catch (error) {
     res.status(500).json({ error: "Erreur serveur" });
   }
 });
 
-// Générer un QCM
-router.post("/qcm", async (req, res) => {
+router.post("/qcm", authMiddleware, async (req, res) => {
   try {
     const Groq = require("groq-sdk");
     const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
-
-    if (!req.user) {
-      return res.status(401).json({ error: "Veuillez vous connecter" });
-    }
-
     const { summary } = req.body;
-
     const response = await groq.chat.completions.create({
       model: "llama-3.3-70b-versatile",
       messages: [
@@ -155,19 +130,16 @@ router.post("/qcm", async (req, res) => {
               }
             ]
           }
-          Le champ "correct" est l'index (0, 1, 2 ou 3) de la bonne reponse dans le tableau "options".
-          Ne mets rien d'autre que le JSON.`
+          Le champ "correct" est l index (0, 1, 2 ou 3) de la bonne reponse dans le tableau "options".
+          Ne mets rien d autre que le JSON.`
         },
         { role: "user", content: "Cree un QCM de 10 questions sur ce resume : " + summary }
       ]
     });
-
     const content = response.choices[0].message.content;
     const clean = content.replace(/```json|```/g, "").trim();
     const qcm = JSON.parse(clean);
-
     res.json(qcm);
-
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Erreur lors de la generation du QCM" });
