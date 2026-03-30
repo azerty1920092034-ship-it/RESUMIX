@@ -9,7 +9,7 @@ module.exports = (passport) => {
   passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: "https://resumix-1-pmv0.onrender.com/auth/google/callback"
+    callbackURL: "https://resumix-1f.onrender.com/auth/google/callback"
   }, async (accessToken, refreshToken, profile, done) => {
     try {
       let user = await User.findOne({ googleId: profile.id });
