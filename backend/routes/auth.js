@@ -1,8 +1,8 @@
 const router = require("express").Router();
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const crypto = require("crypto");
 const nodemailer = require("nodemailer");
+const passport = require("passport");
 const User = require("../models/User");
 
 const transporter = nodemailer.createTransport({
@@ -16,6 +16,17 @@ const transporter = nodemailer.createTransport({
 const generateToken = (user) => {
   return jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
 };
+
+// Google OAuth
+router.get("/google", passport.authenticate("google", { scope: ["profile", "email"] }));
+
+router.get("/google/callback",
+  passport.authenticate("google", { failureRedirect: "https://resumix-1f.onrender.com/login" }),
+  (req, res) => {
+    const token = generateToken(req.user);
+    res.redirect(`https://resumix-1f.onrender.com?token=${token}`);
+  }
+);
 
 // Inscription email
 router.post("/register", async (req, res) => {
@@ -82,7 +93,7 @@ router.post("/forgot-password", async (req, res) => {
     });
     res.json({ success: true, message: "Code envoye par email" });
   } catch (err) {
-    res.status(500).json({ error: "Erreur lors de l'envoi de l'email" });
+    res.status(500).json({ error: "Erreur lors de l envoi de l email" });
   }
 });
 

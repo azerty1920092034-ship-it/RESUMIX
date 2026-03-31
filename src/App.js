@@ -163,12 +163,23 @@ function App() {
   const [forgotSuccess, setForgotSuccess] = useState("");
 
   useEffect(() => {
-    const token = getToken();
-    if (token) {
-      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-    }
-    checkSession();
     const params = new URLSearchParams(window.location.search);
+
+    // Récupérer token Google depuis l'URL
+    const googleToken = params.get("token");
+    if (googleToken) {
+      setToken(googleToken);
+      axios.defaults.headers.common["Authorization"] = `Bearer ${googleToken}`;
+      window.history.replaceState({}, "", "/");
+    } else {
+      const token = getToken();
+      if (token) {
+        axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+      }
+    }
+
+    checkSession();
+
     const payment = params.get("payment");
     if (payment === "approved") {
       alert("Paiement reussi ! Vous etes maintenant PRO !");
