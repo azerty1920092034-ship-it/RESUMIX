@@ -1,24 +1,21 @@
 const router = require("express").Router();
 const { FedaPay, Transaction } = require("fedapay");
 const User = require("../models/User");
+const authMiddleware = require("../middleware/auth");
 
 FedaPay.setApiKey(process.env.FEDAPAY_SECRET_KEY);
 FedaPay.setEnvironment("live");
 
 // Créer une transaction FedaPay
-router.post("/pay", async (req, res) => {
+router.post("/pay", authMiddleware, async (req, res) => {
   try {
-    if (!req.user) {
-      return res.status(401).json({ error: "Veuillez vous connecter" });
-    }
-
     const user = req.user;
 
     const transaction = await Transaction.create({
       description: "Abonnement RESUMIX PRO - 1 mois",
       amount: 3000,
       currency: { iso: "XOF" },
-      callback_url: "https://resumix-9arb.onrender.com/payment/callback",
+      callback_url: "https://resumix-1-pmv0.onrender.com/payment/callback",
       customer: {
         firstname: user.name.split(" ")[0] || user.name,
         lastname: user.name.split(" ")[1] || "",
@@ -55,11 +52,11 @@ router.get("/callback", async (req, res) => {
       }
     }
 
-    res.redirect("http://localhost:3000?payment=" + status);
+    res.redirect("https://resumix-1f.onrender.com?payment=" + status);
 
   } catch (error) {
     console.error(error);
-    res.redirect("http://localhost:3000?payment=error");
+    res.redirect("https://resumix-1f.onrender.com?payment=error");
   }
 });
 
